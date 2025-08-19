@@ -5,6 +5,9 @@ const path = require('path');
 
 const app = express();
 
+// Set views directory secara eksplisit
+app.set('views', path.join(__dirname, 'views'));
+
 // Solusi CSP untuk Base64 Image (letakkan sebelum routes)
 app.use((req, res, next) => {
   res.setHeader(
