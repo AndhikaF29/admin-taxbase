@@ -5,6 +5,15 @@ const path = require('path');
 
 const app = express();
 
+// Solusi CSP untuk Base64 Image (letakkan sebelum routes)
+app.use((req, res, next) => {
+  res.setHeader(
+    "Content-Security-Policy",
+    "default-src 'self'; img-src 'self' data: https:; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net;"
+  );
+  next();
+});
+
 // Supabase configuration - gunakan environment variables
 const supabaseUrl = process.env.SUPABASE_URL || 'https://tqcjtvpnexjigmsqscfy.supabase.co';
 const supabaseKey = process.env.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRxY2p0dnBuZXhqaWdtc3FzY2Z5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU1OTExNzUsImV4cCI6MjA3MTE2NzE3NX0.8pToqRUB3e4ZotxE2Lc8Vj9AN87b1sIX5rLLHJO4kek';
@@ -314,12 +323,3 @@ if (process.env.NODE_ENV !== 'production') {
     console.log(`Admin News app listening at http://localhost:${port}`);
   });
 }
-
-// Solusi CSP untuk Base64 Image
-app.use((req, res, next) => {
-  res.setHeader(
-    "Content-Security-Policy",
-    "default-src 'self'; img-src 'self' data: https:; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net;"
-  );
-  next();
-});
