@@ -313,6 +313,12 @@ app.get('/api/news/:id', async (req, res) => {
   }
 });
 
+// Error handler agar error EJS lebih jelas di log Vercel
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).send('Internal Server Error: ' + err.message);
+});
+
 // Export untuk Vercel
 module.exports = app;
 
