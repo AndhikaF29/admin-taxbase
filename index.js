@@ -316,6 +316,8 @@ app.get('/api/news/:id', async (req, res) => {
   }
 });
 
+module.exports = app;
+
 app.listen(port, () => {
   console.log(`Admin News app listening at http://localhost:${port}`);
 });
