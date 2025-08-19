@@ -2,14 +2,12 @@ const express = require('express');
 const multer = require('multer');
 const { createClient } = require('@supabase/supabase-js');
 const path = require('path');
-const fs = require('fs');
 
 const app = express();
-const port = 3000;
 
-// Supabase configuration
-const supabaseUrl = 'https://tqcjtvpnexjigmsqscfy.supabase.co';
-const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRxY2p0dnBuZXhqaWdtc3FzY2Z5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU1OTExNzUsImV4cCI6MjA3MTE2NzE3NX0.8pToqRUB3e4ZotxE2Lc8Vj9AN87b1sIX5rLLHJO4kek';
+// Supabase configuration - gunakan environment variables
+const supabaseUrl = process.env.SUPABASE_URL || 'https://tqcjtvpnexjigmsqscfy.supabase.co';
+const supabaseKey = process.env.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRxY2p0dnBuZXhqaWdtc3FzY2Z5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU1OTExNzUsImV4cCI6MjA3MTE2NzE3NX0.8pToqRUB3e4ZotxE2Lc8Vj9AN87b1sIX5rLLHJO4kek';
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 // Middleware
@@ -18,9 +16,9 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.static('public'));
 app.set('view engine', 'ejs');
 
-// Multer configuration for file upload
+// Multer configuration for memory storage (tidak pakai disk)
 const upload = multer({
-  dest: 'uploads/',
+  storage: multer.memoryStorage(),
   limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
   fileFilter: (req, file, cb) => {
     const allowedTypes = /jpeg|jpg|png|gif|webp/;
@@ -76,16 +74,14 @@ app.post('/create', upload.single('image'), async (req, res) => {
     
     let imageUrl = null;
     
-    // Upload image if provided
+    // Upload image if provided - gunakan buffer langsung
     if (req.file) {
       const fileExt = path.extname(req.file.originalname);
       const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}${fileExt}`;
       
-      const fileBuffer = fs.readFileSync(req.file.path);
-      
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('news')
-        .upload(fileName, fileBuffer, {
+        .upload(fileName, req.file.buffer, {
           contentType: req.file.mimetype
         });
       
@@ -96,9 +92,6 @@ app.post('/create', upload.single('image'), async (req, res) => {
         .getPublicUrl(fileName);
       
       imageUrl = publicUrl;
-      
-      // Clean up temp file
-      fs.unlinkSync(req.file.path);
     }
     
     const slug = generateSlug(judul);
@@ -181,7 +174,7 @@ app.post('/edit/:id', upload.single('image'), async (req, res) => {
       imageUrl = null;
     }
     
-    // Upload new image if provided
+    // Upload new image if provided - gunakan buffer
     if (req.file) {
       // Remove old image if exists
       if (existingNews.image && !remove_image) {
@@ -192,11 +185,9 @@ app.post('/edit/:id', upload.single('image'), async (req, res) => {
       const fileExt = path.extname(req.file.originalname);
       const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}${fileExt}`;
       
-      const fileBuffer = fs.readFileSync(req.file.path);
-      
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('news')
-        .upload(fileName, fileBuffer, {
+        .upload(fileName, req.file.buffer, {
           contentType: req.file.mimetype
         });
       
@@ -207,9 +198,6 @@ app.post('/edit/:id', upload.single('image'), async (req, res) => {
         .getPublicUrl(fileName);
       
       imageUrl = publicUrl;
-      
-      // Clean up temp file
-      fs.unlinkSync(req.file.path);
     }
     
     const slug = generateSlug(judul);
@@ -316,8 +304,14 @@ app.get('/api/news/:id', async (req, res) => {
   }
 });
 
+// Export untuk Vercel
 module.exports = app;
 
-app.listen(port, () => {
-  console.log(`Admin News app listening at http://localhost:${port}`);
-});
+// Hanya jalankan app.listen() jika tidak di Vercel
+if (process.env.NODE_ENV !== 'production') {
+  const port = process.env.PORT || 3000;
+  app.listen(port, () => {
+    console.log(`Admin News app listening at http://localhost:${port}`);
+  });
+}
+;
