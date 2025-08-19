@@ -314,4 +314,12 @@ if (process.env.NODE_ENV !== 'production') {
     console.log(`Admin News app listening at http://localhost:${port}`);
   });
 }
-;
+
+// Solusi CSP untuk Base64 Image
+app.use((req, res, next) => {
+  res.setHeader(
+    "Content-Security-Policy",
+    "default-src 'self'; img-src 'self' data: https:; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net;"
+  );
+  next();
+});
